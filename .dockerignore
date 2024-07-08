@@ -1,0 +1,9 @@
+.gitignore
+.git
+[Ii][Gg][Nn][Oo][Rr][Ee]
+[Dd][Oo][Nn][Oo][Tt][Bb][Aa][Cc][Kk][Uu]{Pp]
+LogDataFieldDay2024.edf
+checkfieldday
+field-day.sql
+Makefile
+Dockerfile

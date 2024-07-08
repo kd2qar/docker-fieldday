@@ -1,0 +1,68 @@
+#!/bin/python3
+import requests
+import sys
+from bs4 import BeautifulSoup
+
+url="https://field-day.arrl.org/fdentriesrcvd.php"
+sys.stderr.write("Fetching results from: " + url + "\n")
+
+response = requests.get(url)
+
+soup = BeautifulSoup(response.content,"html.parser")
+
+sys.stderr.write("Results downloaded\n")
+
+table = soup.find("table")
+
+#headers = []
+#for th in table.find_all("th"):
+#   headers.append(th.text.strip())
+
+i=0;
+rows = []
+for row in table.find_all("tr"):
+   cells = []
+   i = i + 1
+   for td in row.find_all("td"):
+       cells.append(td.text.strip())
+   if cells:
+       rows.append(cells)
+
+## process the data
+sys.stderr.write("Processing the data from " + str(i) + " rows\n")
+i=0;
+for row in rows:
+   #print(row)
+   i = i + 1
+   if i > 5 : break;
+
+insert = "INSERT INTO fieldday.fieldday_status (`callsign`, `gota`, `status`, `club`, `class`, `section`) VALUES "
+
+i=0
+lines = []
+lines.append("TRUNCATE TABLE fieldday.fieldday_status;")
+lines.append(insert)
+nrows = len(rows)
+for row in rows:
+    i = i + 1
+    if (i < 3) : continue
+    # if (i < 10): print("/*",i,"*/ " , row[0])
+    rl = len(row)
+    j=0
+    rs = insert
+    rs = "("
+    for col in row:
+        rs += "'" + col.replace("'","''") + "'"
+        j = j + 1
+        if (j < rl) : rs += "," 
+    rs += ") "
+    if (i < nrows) : rs += ","
+    else : rs+= ";"
+    lines.append(rs)
+    #if (i > 10):       break
+sys.stderr.write( str(i-2) + " SQL Insert statements created. Writing SQL statements to stdout...\n")
+for line in lines:
+    print(line)
+sys.stderr.write("Done extracting data from ARRL\n")
+
+

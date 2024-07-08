@@ -1,0 +1,180 @@
+#!/bin/bash
+
+POSITIONAL_ARGS=()
+#QUIET=0
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -q|--quiet)
+      QUIET=true
+      shift # past argument
+      #shift # past value
+      ;;
+    -o|--orig|--original)
+      ORIGINAL=true
+      shift
+      ;;  
+    -u|--update)
+      UPDATE=true
+      shift
+      ;;
+    -h|-?|--help)
+      HELP=YES
+      shift # past argument
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
+if [ "${HELP}" = "YES" ]; then
+#01234567890123456789012345678901234567890123456789012345678901234567890123456789
+  cat << HELPME
+Check Field Day Log entries
+
+This uses the docker container 'kd2qar/fieldday' and a mariadb database
+to do conversions and comparisons. Presumes that the container image
+is available and has been loaded with the current N3FJP field day log.
+
+Downloads data from the field day "Entries Recieved" page and compares 
+"Class" and "Section" information provided for each callaign's entry
+to class and section recorded in the field day logger.
+
+Usage:	checkfielday [options]
+Options:
+        --quiet,-q		mimimal output
+	--original,-o		compare to original field day log
+	--update,-u		update information from ARRL Field Day Entry 
+				"Entries Received" page
+				Data is scrapted from the table on the 
+				"Entries Recieved" page
+	
+HELPME
+	exit 0
+fi
+
+
+## DOCKER IMAGE TO USE FOR SCRAPING AND DB CONVERSION
+IMAGE="kd2qar/fieldday"
+
+## SET TO DATABASE CLIENT PROGRAM (eg. mariadb)
+MARIADB=log4omdb-import
+
+## SET TO YOUR FIELD DAY N3FJP LOGGER DATABASE
+FDFILE="LogDataFieldDay.mdb"
+if [ "${ORIGINAL}" = "true" ]; then
+  ## UNALTERED VERSION OF DATABASE TO COMPARE TO
+  FDFILE="LogDataFieldDay-Original.mdb"
+fi
+
+
+#
+# Extract data from the Local field day log in the N3FJP software datbase
+# and loades it into a mariadb database
+# raw data is extracted into the table 'tblContacts' and then loaded
+# to a simpler table used for the comparison queries.
+#
+
+${MARIADB} -n << LOADOURSTUFF
+USE fieldday;
+SET @unbuffered=TRUE;
+-- SELECT fldCall from fieldday.tblContacts;
+TRUNCATE fieldday.tblContacts;
+
+$(docker run --rm -i ${IMAGE} mdb-export --insert=mysql  ${FDFILE} tblContacts );
+
+TRUNCATE fieldday.fieldday_log;
+insert into fieldday.fieldday_log (\`date\`,\`frequency\`,\`time\`,\`callsign\`,\`rst_sent\`,\`rst_rcvd\`,\`name\`,\`mode\`,
+                          \`comment\`,\`state\`,\`country\`,\`email\`,\`station\`,\`operator\`,\`class\`,\`section\`)
+SELECT fldDateStr, fldFrequency, fldTimeOnStr, fldCall, fldRstS, fldRstR, 
+       '', fldMode, '', fldState, '', '', fldStation, fldOperator, fldClass, fldSection
+FROM   fieldday.tblContacts;
+LOADOURSTUFF
+
+
+## UPDATE THE INFORMATION FROM THE ARRL LOG SUBMISSION TABLE
+# Log entry summary information scraped from the ARRL field day site
+# is loaded into a table so that the class and section data provided
+# for the uploaded logs can be compared to the ones recorded in the
+# local log during field day
+
+if [ "${UPDATE}" = "true" ]; then
+  if [ ! "${QUIET}" = true ]; then
+    echo "Update submitted logs from ARRL Site"
+  fi
+  SCRAPE="$(docker run --rm ${IMAGE} /root/bin/scraper)"
+  echo "Load results data into db" 
+  ${MARIADB} << XXXX
+START TRANSACTION;
+${SCRAPE}
+COMMIT;
+XXXX
+  echo "Table of ARRL results updated"
+fi
+
+## COMPARE CLASS AND SECTION FOR EACH CALLSIGN TO MAKE SURE WE GOT IT RIGHT
+
+${MARIADB} -n --table << "F"
+DELIMITER ;;
+
+CREATE OR REPLACE FUNCTION fieldday.isNumber(inputValue VARCHAR(50))   RETURNS INT
+  COMMENT 'check for numeric value'
+  BEGIN
+    IF (inputValue REGEXP ('^[0-9]+$'))
+    THEN
+      RETURN 1;
+    ELSE
+      RETURN 0;
+    END IF;
+  END;
+
+
+CREATE OR REPLACE FUNCTION fieldday.fixClass(origClass VARCHAR(50)) RETURNS VARCHAR(50)
+COMMENT 'Lops off extraneous number from end of class for ARRL Field Day submissions'
+BEGIN
+
+SET @pos = LENGTH(origClass)-1;
+SET @tail = SUBSTRING(origClass,@pos+1);
+
+  IF (fieldday.isNumber(@tail) = 1)
+  THEN
+    RETURN SUBSTRING(origClass,1,@pos);
+  ELSE
+    RETURN origClass;
+  END IF;
+RETURN  "test";
+END;
+;;
+DELIMITER ;
+
+
+SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', my.class = st.class AND my.section = st.section AS ISOK
+  , hamclubs.fixClass(st.class) as FIX
+ , IF( st.class <> fieldday.fixClass(st.class), CONCAT('FIX: ', fieldday.fixClass(st.class)),'') as ISFIXED
+FROM fieldday.`fieldday_log` my
+INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign;
+
+SELECT
+(SELECT COUNT(*) FROM fieldday.`fieldday_log` my
+ INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign) AS `matched`,
+ (SELECT COUNT(*)  FROM fieldday.`fieldday_log` t ) AS `our total`,
+(SELECT COUNT(*)   FROM fieldday.`fieldday_log` my
+INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
+WHERE NOT (my.class = st.class AND my.section = st.section)) AS 'discrepancies',
+(SELECT COUNT(*)  FROM fieldday.fieldday_status s) AS 'total entries'
+;
+
+SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', my.class = st.class AND my.section = st.section AS ISOK
+FROM fieldday.`fieldday_log` my 
+INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign  
+WHERE NOT (my.class = st.class AND my.section = st.section);
+F
+
+
