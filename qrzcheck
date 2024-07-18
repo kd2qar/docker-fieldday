@@ -1,0 +1,55 @@
+#!/bin/bash
+
+
+
+log4omdb-import << "SQL"
+DROP TABLE IF EXISTS fieldday.qrzdata;
+CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
+   `fdcall` VARCHAR(20) NOT NULL	 ,
+	`callsign` VARCHAR(20) DEFAULT NULL ,
+	`nickname` TEXT NULL DEFAULT NULL ,
+	`firstname` TEXT NULL DEFAULT NULL ,
+	`lastname` TEXT NULL DEFAULT NULL ,
+	`phone` VARCHAR(20) NULL DEFAULT NULL ,
+	`grid` VARCHAR(6) NULL DEFAULT NULL ,
+	`addr2` TEXT NULL DEFAULT NULL ,
+	`state` VARCHAR(20) NULL DEFAULT NULL,
+	`country` TEXT NULL DEFAULT NULL ,
+	`class` TEXT NULL DEFAULT NULL ,
+	`fullname` TEXT AS (if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,concat(if(`nickname` is null,`firstname`,`nickname`),' ',if(`lastname` is null,'',`lastname`)))) VIRTUAL,
+	`location` TEXT AS (if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`))) virtual,
+        `email` TEXT NULL DEFAULT NULL,
+	`qrz_email` TEXT NULL DEFAULT NULL, 
+	PRIMARY KEY (`fdcall`) USING BTREE
+)
+COMMENT='Details from QRZ and other sources for each callsign'
+;
+
+INSERT INTO fieldday.qrzdata (fdcall) SELECT callsign FROM fieldday.fieldday_log group by callsign;
+
+SQL
+
+ADDCHECKSQL='SELECT callsign FROM fieldday.fieldday_log group by callsign;';
+
+ mapfile -t ADDUSERS < <(echo "${ADDCHECKSQL}" | log4omdb-import);
+ i=0
+ SQL=""
+for n in "${ADDUSERS[@]}"
+  do
+    echo ${n}
+    if [ ${i} -eq 0 ]; then
+      i=1
+      continue
+    fi
+    FDCALL="${n}"
+
+    CMD="callinfo ${FDCALL} "
+
+log4omdb-import << UPDATE
+
+`${CMD} | sed s/rcforb.rawny_details/fieldday.qrzdata/g | sed s/END\ IF//g | sed s/IF/--\ IF/g  | sed s/ELSE/--\ ELSE/g | sed sxa\ \(xa\ \(fdcall,xg | sed s/VALUES\(/VALUES\(\'${FDCALL}\',/g | sed s/WHERE/WHERE\ fdcall=\'${FDCALL}\'\;\ --\ /g | sed s/INSERT/--\ INSERT/ `
+
+UPDATE
+
+done
+

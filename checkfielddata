@@ -91,9 +91,9 @@ TRUNCATE fieldday.tblContacts;
 $(docker run --rm -i ${IMAGE} mdb-export --insert=mysql  ${FDFILE} tblContacts );
 
 TRUNCATE fieldday.fieldday_log;
-insert into fieldday.fieldday_log (\`date\`,\`frequency\`,\`time\`,\`callsign\`,\`rst_sent\`,\`rst_rcvd\`,\`name\`,\`mode\`,
+insert into fieldday.fieldday_log (\`date\`,\`band\`,\`frequency\`,\`time\`,\`callsign\`,\`rst_sent\`,\`rst_rcvd\`,\`name\`,\`mode\`,
                           \`comment\`,\`state\`,\`country\`,\`email\`,\`station\`,\`operator\`,\`class\`,\`section\`)
-SELECT fldDateStr, fldFrequency, fldTimeOnStr, fldCall, fldRstS, fldRstR, 
+SELECT fldDateStr, fldBand, fldFrequency, fldTimeOnStr, fldCall, fldRstS, fldRstR, 
        '', fldMode, '', fldState, '', '', fldStation, fldOperator, fldClass, fldSection
 FROM   fieldday.tblContacts;
 LOADOURSTUFF
@@ -155,11 +155,24 @@ END;
 DELIMITER ;
 
 
-SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', my.class = st.class AND my.section = st.section AS ISOK
-  , hamclubs.fixClass(st.class) as FIX
- , IF( st.class <> fieldday.fixClass(st.class), CONCAT('FIX: ', fieldday.fixClass(st.class)),'') as ISFIXED
+\! echo '-----  ALL MATCHES  -----'
+
+SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', 
+    IF(my.class = st.class AND my.section = st.section,'','NO') AS ISOK,
+    hamclubs.fixClass(st.class) as FIX,
+    IF( st.class <> fieldday.fixClass(st.class), CONCAT('FIX: ', fieldday.fixClass(st.class)),'') as ISFIXED
 FROM fieldday.`fieldday_log` my
 INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign;
+
+\! echo '-----  NOT MATCHED   -----'
+
+SELECT my.callsign, my.class, my.section, my.band, my.mode, my.date, my.time, st.callsign AS reported
+FROM fieldday.`fieldday_log` my
+LEFT JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
+WHERE  NOT my.callsign <=> st.callsign
+;
+
+\! echo '-----  STATS  -----'
 
 SELECT
 (SELECT COUNT(*) FROM fieldday.`fieldday_log` my
@@ -171,10 +184,19 @@ WHERE NOT (my.class = st.class AND my.section = st.section)) AS 'discrepancies',
 (SELECT COUNT(*)  FROM fieldday.fieldday_status s) AS 'total entries'
 ;
 
-SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', my.class = st.class AND my.section = st.section AS ISOK
+\! echo '-----  SECTION or CLASS MISMATCH  -----'
+
+SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', 
+       IF(my.class = st.class AND my.section = st.section,'','NO') AS ISOK
 FROM fieldday.`fieldday_log` my 
 INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign  
 WHERE NOT (my.class = st.class AND my.section = st.section);
+
+\! echo '-----  BROKEN CALLS  -----'
+
+SELECT my.callsign, my.class, my.section, my.mode, my.band, my.frequency, my.date, my.time, my.state FROM fieldday.fieldday_log my
+LEFT JOIN fieldday.qrzdata qrz ON my.callsign = qrz.fdcall where qrz.callsign is null;
+
 F
 
 

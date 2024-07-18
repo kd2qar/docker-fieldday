@@ -1,8 +1,9 @@
 CREATE database IF NOT EXISTS fieldday;
-
+DROP TABLE IF EXISTS fieldday.fieldday_log;
 CREATE TABLE IF NOT EXISTS fieldday.fieldday_log (
   `date` varchar(50) DEFAULT NULL,
   `frequency` varchar(50) DEFAULT NULL,
+  `band`      varchar(50) DEFAULT NULL,
   `time` varchar(50) DEFAULT NULL,
   `callsign` varchar(50) DEFAULT NULL,
   `rst_sent` varchar(50) DEFAULT NULL,
