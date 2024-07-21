@@ -164,7 +164,7 @@ SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report
 FROM fieldday.`fieldday_log` my
 INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign;
 
-\! echo '-----  NOT MATCHED   -----'
+\! echo '-----  QSOS NOT MATCHING LOG SUBMISSIONS   -----'
 
 SELECT my.callsign, my.class, my.section, my.band, my.mode, my.date, my.time, st.callsign AS reported
 FROM fieldday.`fieldday_log` my
@@ -172,24 +172,35 @@ LEFT JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
 WHERE  NOT my.callsign <=> st.callsign
 ;
 
-\! echo '-----  STATS  -----'
+\! echo '-----  NAME COMPARISON OF MATCHED QSOS  -----'
 
-SELECT
-(SELECT COUNT(*) FROM fieldday.`fieldday_log` my
- INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign) AS `matched`,
- (SELECT COUNT(*)  FROM fieldday.`fieldday_log` t ) AS `our total`,
-(SELECT COUNT(*)   FROM fieldday.`fieldday_log` my
-INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
-WHERE NOT (my.class = st.class AND my.section = st.section)) AS 'discrepancies',
-(SELECT COUNT(*)  FROM fieldday.fieldday_status s) AS 'total entries'
-;
+select my.callsign,qrz.callsign as `call on qrz`,  qrz.fullname as `full name on qrz`, fds.club AS `club name submitted` FROM fieldday.fieldday_log my
+					JOIN fieldday.qrzdata qrz ON my.callsign = qrz.fdcall 
+					JOIN fieldday.fieldday_status fds ON my.callsign = fds.callsign
+					GROUP BY my.callsign;
+
+\! echo '-----  STATS  -----'
+SELECT 	
+        matched as MATCHED, 
+	ROUND(matched/ourtotal * 100) AS `PERCENT MATCHED`, 
+	ourtotal as `OUR TOTAL`, 
+	discrepancies as `CLASS/SECT DISCREPANCIES `,
+	totalentries AS `TOTAL ENTRIES`
+FROM 
+(SELECT
+(SELECT COUNT(*) FROM fieldday.fieldday_log my INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign) AS matched,
+(SELECT COUNT(*) FROM fieldday.fieldday_log t ) AS ourtotal,
+(SELECT COUNT(*) FROM fieldday.fieldday_log my INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign WHERE NOT (my.class = st.class AND my.section = st.section)) AS discrepancies,
+(SELECT COUNT(*) FROM fieldday.fieldday_status s) AS totalentries
+) dat;
+
 
 \! echo '-----  SECTION or CLASS MISMATCH  -----'
 
-SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', 
+SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report',
        IF(my.class = st.class AND my.section = st.section,'','NO') AS ISOK
-FROM fieldday.`fieldday_log` my 
-INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign  
+FROM fieldday.`fieldday_log` my
+INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
 WHERE NOT (my.class = st.class AND my.section = st.section);
 
 \! echo '-----  BROKEN CALLS  -----'

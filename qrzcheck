@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
 	`state` VARCHAR(20) NULL DEFAULT NULL,
 	`country` TEXT NULL DEFAULT NULL ,
 	`class` TEXT NULL DEFAULT NULL ,
-	`fullname` TEXT AS (if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,concat(if(`nickname` is null,`firstname`,`nickname`),' ',if(`lastname` is null,'',`lastname`)))) VIRTUAL,
+	`fullname` TEXT AS (if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,concat(if(`nickname` is null,if(firstname IS NULL,'',concat(`firstname`,' ')),concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`)))) VIRTUAL,
 	`location` TEXT AS (if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`))) virtual,
         `email` TEXT NULL DEFAULT NULL,
 	`qrz_email` TEXT NULL DEFAULT NULL, 
@@ -43,13 +43,15 @@ for n in "${ADDUSERS[@]}"
     fi
     FDCALL="${n}"
 
-    CMD="callinfo ${FDCALL} "
-
-log4omdb-import << UPDATE
-
-`${CMD} | sed s/rcforb.rawny_details/fieldday.qrzdata/g | sed s/END\ IF//g | sed s/IF/--\ IF/g  | sed s/ELSE/--\ ELSE/g | sed sxa\ \(xa\ \(fdcall,xg | sed s/VALUES\(/VALUES\(\'${FDCALL}\',/g | sed s/WHERE/WHERE\ fdcall=\'${FDCALL}\'\;\ --\ /g | sed s/INSERT/--\ INSERT/ `
-
-UPDATE
+callinfo ${FDCALL} \
+                   | sed s/rcforb.rawny_details/fieldday.qrzdata/g \
+	           | sed s/END\ IF//g | sed s/IF/--\ IF/g  \
+	           | sed s/ELSE/--\ ELSE/g \
+	           | sed sxa\ \(xa\ \(fdcall,xg \
+	           | sed s/VALUES\(/VALUES\(\'${FDCALL}\',/g \
+	           | sed -E "s/ *WHERE (.*);/, \1 WHERE fdcall=\'${FDCALL}\'\;/g" \
+	           | sed s/INSERT/--\ INSERT/ \
+		   | log4omdb-import
 
 done
 
