@@ -158,9 +158,9 @@ DELIMITER ;
 \! echo '-----  ALL MATCHES  -----'
 
 SELECT my.callsign, my.class, my.section, st.callsign, st.class AS 'class report', st.section AS 'sect report', 
-    IF(my.class = st.class AND my.section = st.section,'','NO') AS ISOK,
-    hamclubs.fixClass(st.class) as FIX,
-    IF( st.class <> fieldday.fixClass(st.class), CONCAT('FIX: ', fieldday.fixClass(st.class)),'') as ISFIXED
+    IF(my.class = st.class AND my.section = st.section,'','NO') AS ISOK
+    -- , hamclubs.fixClass(st.class) as FIX,
+    -- IF( st.class <> fieldday.fixClass(st.class), CONCAT('FIX: ', fieldday.fixClass(st.class)),'') as ISFIXED
 FROM fieldday.`fieldday_log` my
 INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign;
 

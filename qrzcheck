@@ -1,9 +1,7 @@
 #!/bin/bash
 
-
-
 log4omdb-import << "SQL"
-DROP TABLE IF EXISTS fieldday.qrzdata;
+-- DROP TABLE IF EXISTS fieldday.qrzdata;
 CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
    `fdcall` VARCHAR(20) NOT NULL	 ,
 	`callsign` VARCHAR(20) DEFAULT NULL ,
@@ -25,33 +23,27 @@ CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
 COMMENT='Details from QRZ and other sources for each callsign'
 ;
 
-INSERT INTO fieldday.qrzdata (fdcall) SELECT callsign FROM fieldday.fieldday_log group by callsign;
+-- INSERT INTO fieldday.qrzdata (fdcall) SELECT callsign FROM fieldday.fieldday_log group by callsign;
 
 SQL
 
 ADDCHECKSQL='SELECT callsign FROM fieldday.fieldday_log group by callsign;';
 
- mapfile -t ADDUSERS < <(echo "${ADDCHECKSQL}" | log4omdb-import);
- i=0
- SQL=""
-for n in "${ADDUSERS[@]}"
+mapfile -t ADDUSERS < <(echo "${ADDCHECKSQL}" | log4omdb-import);
+i=0
+SQL=""
+
+FDCALLS=""
+
+for n in  "${ADDUSERS[@]}"
   do
-    echo ${n}
     if [ ${i} -eq 0 ]; then
       i=1
       continue
     fi
-    FDCALL="${n}"
+    FDCALLS="${FDCALLS} ${n}"
+  done
+#echo "${FDCALLS}"
 
-callinfo ${FDCALL} \
-                   | sed s/rcforb.rawny_details/fieldday.qrzdata/g \
-	           | sed s/END\ IF//g | sed s/IF/--\ IF/g  \
-	           | sed s/ELSE/--\ ELSE/g \
-	           | sed sxa\ \(xa\ \(fdcall,xg \
-	           | sed s/VALUES\(/VALUES\(\'${FDCALL}\',/g \
-	           | sed -E "s/ *WHERE (.*);/, \1 WHERE fdcall=\'${FDCALL}\'\;/g" \
-	           | sed s/INSERT/--\ INSERT/ \
-		   | log4omdb-import
-
-done
+callinfo --table fieldday.qrzdata ${FDCALLS}
 
