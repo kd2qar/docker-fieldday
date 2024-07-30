@@ -36,12 +36,12 @@ The bash script **checkfielddata** is run from the command line and, roughly doe
  The raw data is extracted into the table 'tblContacts' and then loaded
  to a simpler table, fieldday_log, which is used for the comparison queries.
 
-2. UPDATE THE INFORMATION FROM THE ARRL LOG SUBMISSION TABLE:
-  [entries received](https://field-day.arrl.org/fdentriesrcvd.php)
+2. Updates the information from the ARRL log submission site:
+  [entries received](https://field-day.arrl.org/fdentriesrcvd.php).
   Using the python script **scraper**; log entry summary information scraped from the ARRL field day site
   is loaded into a table, fieldday_status, so that the class and section data provided
   for the uploaded logs can be compared to the ones recorded in the
-  local log during field day
+  local log during field day. **Note** that this works with the **2024** version of the site so, *your mileage may vary*.
  
 3. Runs a series of queries to provide the following information:
 - All callsign matches found in the submitted entries table. 
