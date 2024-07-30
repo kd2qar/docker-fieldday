@@ -66,7 +66,7 @@ The `qrzcheck` script uses the (not publshed yet) `callinfo` script to query the
 SQL to insert or update the callbook data.
 
 For Example:
-...
+```
 DELIMITER $$
 IF (SELECT fdcall FROM fieldday.qrzdata WHERE fdcall = 'w1aw') = 'w1aw' THEN
      UPDATE fieldday.qrzdata SET `callsign`='w1aw',`addr2`='NEWINGTON',`grid`='FN31pr',`state`='CT',`country`='United States',`lastname`='ARRL HQ OPERATORS CLUB',`qrz_email`='W1AW@ARRL.ORG',`class`='C'     WHERE `fdcall`='w1aw';
@@ -74,7 +74,7 @@ IF (SELECT fdcall FROM fieldday.qrzdata WHERE fdcall = 'w1aw') = 'w1aw' THEN
      INSERT INTO fieldday.qrzdata (`fdcall`, `callsign`,`addr2`,`grid`,`state`,`country`,`lastname`,`email`,`qrz_email`,`class`) VALUES('w1aw', 'w1aw','NEWINGTON','FN31pr','CT','United States','ARRL HQ OPERATORS CLUB','W1AW@ARRL.ORG','W1AW@ARRL.ORG','C') ;
 END IF $$
 DELIMITER ;
-...
+```
 
 
 ** This is more interesting than useful. **
