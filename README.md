@@ -77,7 +77,7 @@ DELIMITER ;
 ```
 
 
-** This is more interesting than useful. **
+**This is more interesting than useful.**
 
 ## Possible Improvements:
 - embed the callbook scripts in this image or publish the `callinfo` stuff. 
