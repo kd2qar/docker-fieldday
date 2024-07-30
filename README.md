@@ -44,13 +44,13 @@ The bash script **checkfielddata** is run from the command line and, roughly doe
   local log during field day
  
 3. Runs a series of queries to provide the following information:
--- All callsign matches found in the submitted entries table. 
+- All callsign matches found in the submitted entries table. 
    Those that don't match the class and section exchange are flagged. 
--- Log entries that do not match any of the callsigns in the submitted entries.
--- Comparison of the *club* names on the submitted entries and the callsign name from the callbook data.
--- Some simple statistics including; the number of matches, match percentage, total log entries, number of class or section mismatches and the total number of entries found in the ARRL table.
--- A list of the callsigns with class or section exchanges that don't match the entries on the ARRL site.
-== A list of *broken* calls. i.e. Calls that cannot be found in the callbook data.
+- Log entries that do not match any of the callsigns in the submitted entries.
+- Comparison of the *club* names on the submitted entries and the callsign name from the callbook data.
+- Some simple statistics including; the number of matches, match percentage, total log entries, number of class or section mismatches and the total number of entries found in the ARRL table.
+- A list of the callsigns with class or section exchanges that don't match the entries on the ARRL site.
+- A list of *broken* calls. i.e. Calls that cannot be found in the callbook data.
 
  
 
