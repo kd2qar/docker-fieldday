@@ -10,10 +10,10 @@ run the script '`checkfielddata`' to compare callsign, class and section data to
 on the log submission site.
 
 run with -u or --update periodically to download fresh data from the log submission site:
-	`./checkfielddata -u`
+	- `./checkfielddata -u`
 
-The docker image can be created by running make
-the container is created and run by the 'checkfielddata' script
+The docker image can be created by running `make`.
+The container is created and run by the '`checkfielddata`' script
 
 The docker container encapsulates the tools used to manipulate the data.
 
@@ -53,5 +53,33 @@ The bash script **checkfielddata** is run from the command line and, roughly doe
 - A list of *broken* calls. i.e. Calls that cannot be found in the callbook data.
 
  
+## Loading the callbook data.
+Currently, I use the script `qrzcheck` to load callbook data for the calls in the field day entries table. 
+There is a column `fdcall` that is the callsign used for the exchange or in the entry submission.
+That is the call used to query the callbook information. There is a second column '`callsign`' which is the
+callsign that is *returned* when the callbook is queried. Usually, they are the same. 
+However, when the fdcall is an old call that has been changed to a vanity call, they will not match.
+There were, at least, two cases in 2024 where someone was using their old callsign (presumably out of habit) 
+durring the FD exchange so this attempts to handle that.
+
+The `qrzcheck` script uses the (not publshed yet) `callinfo` script to query the callbook and return the necessary 
+SQL to insert or update the callbook data.
+
+For Example:
+...
+DELIMITER $$
+IF (SELECT fdcall FROM fieldday.qrzdata WHERE fdcall = 'w1aw') = 'w1aw' THEN
+     UPDATE fieldday.qrzdata SET `callsign`='w1aw',`addr2`='NEWINGTON',`grid`='FN31pr',`state`='CT',`country`='United States',`lastname`='ARRL HQ OPERATORS CLUB',`qrz_email`='W1AW@ARRL.ORG',`class`='C'     WHERE `fdcall`='w1aw';
+ ELSE
+     INSERT INTO fieldday.qrzdata (`fdcall`, `callsign`,`addr2`,`grid`,`state`,`country`,`lastname`,`email`,`qrz_email`,`class`) VALUES('w1aw', 'w1aw','NEWINGTON','FN31pr','CT','United States','ARRL HQ OPERATORS CLUB','W1AW@ARRL.ORG','W1AW@ARRL.ORG','C') ;
+END IF $$
+DELIMITER ;
+...
+
 
 ** This is more interesting than useful. **
+
+## Possible Improvements:
+- embed the callbook scripts in this image or publish the `callinfo` stuff. 
+- automate the 'harvesting' of the N3FJP files, possibly copy or link to them at runtime.
+- ...
