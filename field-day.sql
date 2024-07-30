@@ -1,4 +1,10 @@
+-- - CREATE DATABASE AND TABLES FOR ANYLIZING FIELD DAY LOGS
+-- -
+
 CREATE database IF NOT EXISTS fieldday;
+
+-- DESTINATION FOR YOUR FIELD DAY LOG DATA
+
 DROP TABLE IF EXISTS fieldday.fieldday_log;
 CREATE TABLE IF NOT EXISTS fieldday.fieldday_log (
   `date` varchar(50) DEFAULT NULL,
@@ -20,6 +26,10 @@ CREATE TABLE IF NOT EXISTS fieldday.fieldday_log (
   `section` varchar(50) DEFAULT NULL
 ) COMMENT='Field day log data extracted from logging software';
 
+-- TABLE OF DATA SCRAPED FROM ARRL LOG SUBMISSION STATUS PAGE
+-- e.g. https://field-day.arrl.org/fdentry.php
+--
+
 CREATE TABLE IF NOT EXISTS fieldday.fieldday_status (
   `callsign` varchar(50) NOT NULL,
   `gota` varchar(50) DEFAULT NULL,
@@ -29,6 +39,7 @@ CREATE TABLE IF NOT EXISTS fieldday.fieldday_status (
   `section` varchar(10) DEFAULT NULL
 ) COMMENT='Copied data from the field day status site used to verify call, class and section';
 
+-- SCHEMA TO CONTAIN ALL THE DATA FROM THE N3FJP Field Day Logger
 
 CREATE TABLE IF NOT EXISTS fieldday.tblContacts
  (
@@ -100,6 +111,36 @@ CREATE TABLE IF NOT EXISTS fieldday.tblContacts
         `fldPrimaryKey`                 Integer
 ) COMMENT='Data extracted from N3FJP field day logger';
 
+-- DATA PULLED FROM CALLBOOK SITES SUCH AS QRZ and HAMQTH
+-- FIRST COLUMN CONTAINS THE CALL 'HEARD' FROM THE FIELD DAY
+-- STATION
+
+CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
+        `fdcall` VARCHAR(20) NOT NULL         ,
+        `callsign` VARCHAR(20) DEFAULT NULL ,
+        `nickname` TEXT NULL DEFAULT NULL ,
+        `firstname` TEXT NULL DEFAULT NULL ,
+        `lastname` TEXT NULL DEFAULT NULL ,
+        `phone` VARCHAR(20) NULL DEFAULT NULL ,
+        `grid` VARCHAR(6) NULL DEFAULT NULL ,
+        `addr2` TEXT NULL DEFAULT NULL ,
+        `state` VARCHAR(20) NULL DEFAULT NULL,
+        `country` TEXT NULL DEFAULT NULL ,
+        `class` TEXT NULL DEFAULT NULL ,
+        `fullname` TEXT AS (if(`firstname` is null and `lastname` is null and `nickname` is NULL,NULL,
+			       concat(if(`nickname` is null,if(firstname IS NULL,'',concat(`firstname`,' ')),		             
+			       concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`)))) 
+			   VIRTUAL,
+        `location` TEXT AS (if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`))) VIRTUAL,
+        `email` TEXT NULL DEFAULT NULL,
+        `qrz_email` TEXT NULL DEFAULT NULL,
+        PRIMARY KEY (`fdcall`) USING BTREE
+)
+COMMENT='Details from QRZ and other sources for each callsign'
+;
+
+-- USEFUL FUNCTIONS USED IN QUEriES
+
 DELIMITER ;;
 
 CREATE OR REPLACE FUNCTION fieldday.isNumber(inputValue VARCHAR(50))   RETURNS INT
@@ -112,6 +153,8 @@ CREATE OR REPLACE FUNCTION fieldday.isNumber(inputValue VARCHAR(50))   RETURNS I
       RETURN 0;
     END IF;
   END;
+
+-- REMOVES TRAILING NUMBERS FROM SUBMITTED CLASS DESIGNATION
 
 CREATE OR REPLACE FUNCTION fieldday.fixClass(origClass VARCHAR(50)) RETURNS VARCHAR(50)
 COMMENT 'Lops off extraneous number from end of class for ARRL Field Day submissions'
