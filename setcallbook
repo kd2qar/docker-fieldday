@@ -125,7 +125,7 @@ done
 
 echo "SETS=${SETS}"
 
-MARIADB="log4omdb-import"
+MARIADB="mariadb"
 
 if [ -n "${SETS}"  ]; then
 	QUERY="INSERT INTO ${DATABASE}.${TABLE} SET fdcall='${CALL}', ${SETS} ON DUPLICATE KEY UPDATE  ${SETS};"

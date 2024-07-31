@@ -65,7 +65,7 @@ fi
 IMAGE="kd2qar/fieldday"
 
 ## SET TO DATABASE CLIENT PROGRAM (eg. mariadb)
-MARIADB=log4omdb-import
+MARIADB=mariadb
 
 ## SET TO YOUR FIELD DAY N3FJP LOGGER DATABASE
 FDFILE="LogDataFieldDay.mdb"

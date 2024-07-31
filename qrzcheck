@@ -1,6 +1,8 @@
 #!/bin/bash
 
-log4omdb-import << "SQL"
+MARIADB=mariadb
+
+${MARIADB} << "SQL"
 -- DROP TABLE IF EXISTS fieldday.qrzdata;
 CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
    `fdcall` VARCHAR(20) NOT NULL	 ,
@@ -29,7 +31,7 @@ SQL
 
 ADDCHECKSQL='SELECT callsign FROM fieldday.fieldday_log group by callsign;';
 
-mapfile -t ADDUSERS < <(echo "${ADDCHECKSQL}" | log4omdb-import);
+mapfile -t ADDUSERS < <(echo "${ADDCHECKSQL}" | ${MARIADB});
 i=0
 SQL=""
 

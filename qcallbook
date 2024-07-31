@@ -116,7 +116,7 @@ query="select ${FIELDS} FROM ${DATABASE}.${TABLE} where ${SEARCHFIELD} LIKE '${1
 
 echo "${query}"
 
-MARIADB="log4omdb-import"
+MARIADB="mariadb"
 
 ${MARIADB} --table <<< "${query}"
 
