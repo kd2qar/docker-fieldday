@@ -166,9 +166,10 @@ INNER JOIN fieldday.fieldday_status st ON my.callsign = st.callsign;
 
 \! echo '-----  QSOS NOT MATCHING LOG SUBMISSIONS   -----'
 
-SELECT my.callsign, my.class, my.section, my.band, my.mode, my.date, my.time, st.callsign AS reported
+SELECT my.callsign, my.class, my.section, my.band, my.mode, my.date, my.time, st.callsign AS reported, IF( qrz.fullname IS NULL,'',qrz.fullname) as name
 FROM fieldday.`fieldday_log` my
 LEFT JOIN fieldday.fieldday_status st ON my.callsign = st.callsign
+LEFT JOIN fieldday.qrzdata qrz ON my.callsign = qrz.fdcall
 WHERE  NOT my.callsign <=> st.callsign
 ;
 

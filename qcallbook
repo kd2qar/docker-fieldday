@@ -1,0 +1,122 @@
+#!/bin/bash
+
+POSITIONAL_ARGS=()
+#QUIET=0
+
+FIELDS=" fdcall, callsign, nickname, firstname, lastname, IF(email IS NULL,qrz_email,email) as email, phone, grid, addr2, state, country, class"
+SEARCHFIELD="fdcall"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -q|--quiet)
+      QUIET=true
+      shift # past argument
+      #shift # past value
+      ;;
+#    -s|--searchpath)
+#      SEARCHPATH="$2"
+#      shift # past argument
+#      shift # past value
+#      ;;
+    =f|--fdcall)
+      SEARCHFIELD="fdcall";
+      shift
+      ;;
+    -c|--callsign|--call)
+      SEARCHFIELD="callsign";
+      shift
+      ;;
+    -p|--phone)
+      SEARCHFIELD="phone"
+      shift # past argument
+      ;;
+    -e|--email)
+      SEARCHFIELD="email"
+      shift # past argument
+      ;;
+    --nickname|-n)
+      SEARCHFIELD="nickname"
+      shift
+      ;;
+    --grid)
+      SEARCHFIELD="grid"
+      shift
+      ;;
+    --class)
+      SEARCHFIELD="class"
+      shift
+      ;;
+    --lastname)
+      SEARCHFIELD="lastname"
+      shift
+      ;;
+    --firstname)
+      SEARCHFIELD="firstname"
+      shift
+      ;;
+    --name)
+      shift
+      SEARCHFIELD="firstname like '$1'  OR  lastname like '$1' OR nickname "
+      ;;
+    --brief)
+      FIELDS=" fdcall, callsign, IF(nickname IS NULL, firstname, nickname) as name, lastname, IF(email IS NULL,qrz_email,email) as email, phone, grid, country, class"
+      shift
+      ;;
+    -h|--help|-?)
+      HELP=true
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
+DATABASE='fieldday'
+TABLE='qrzdata'
+
+function usage {
+  cat << HELPS
+search the ${TABLE} table in the ${DATABASE}  database for the specified user
+search parameter defaults to callsign but other search parameters may be specified
+qrawny  --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h|-?]
+  --fdcall,-f  DEFAULT - the callsign of the record being searched
+  --callsign, -f - the callsign found in the callbook
+  --email,-e email address
+  --phone,-e telephone number
+  --nickname nickname
+  --firstname
+  --lastname
+  --grid gridsquare
+  --class license class [TGE...]
+  --brief show an abbreviated set of fields
+  --help,-h  this help message
+HELPS
+  return 0
+  }
+
+if [ "$HELP" == true ]; then
+        echo "callsign missing"
+        usage
+        if [ "${CALL}" == "" ]; then
+          exit 1
+        else
+          exit 0
+        fi
+fi
+
+query="select ${FIELDS} FROM ${DATABASE}.${TABLE} where ${SEARCHFIELD} LIKE '${1}' ;"
+
+echo "${query}"
+
+MARIADB="log4omdb-import"
+
+${MARIADB} --table <<< "${query}"
+

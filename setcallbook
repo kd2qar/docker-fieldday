@@ -1,0 +1,147 @@
+#!/bin/bash
+
+POSITIONAL_ARGS=()
+#QUIET=0
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -q|--quiet)
+      QUIET=true
+      shift # past argument
+      #shift # past value
+      ;;
+#    -s|--searchpath)
+#      SEARCHPATH="$2"
+#      shift # past argument
+#      shift # past value
+#      ;;
+    =f|--fdcall)
+      CALL="${2}";shift;shift
+      ;;
+    -c|--callsign|--call)
+      CALLSIGN="${2}"
+      shift;shift
+      ;;
+    -p|--phone)
+      PHONE="phone='${2}'"
+      shift # past argument
+      shift
+      ;;
+    -e|--email)
+      EMAIL="email='${2}'"
+      shift # past argument
+      shift 
+      ;;
+    --nickname|-n)
+      NICKNAME="nickname='${2}'"
+      shift;shift
+      ;;
+    --firstname)
+      FIRSTNAME="firstname='$2'"
+      shift;shift
+      ;;
+    --lastname)
+      LASTNAME="lastname='$2'"
+      shift;shift
+      ;;
+    --country)
+      COUNTRY="country='$2'"
+      shift;shift
+      ;;
+    --grid)
+      GRID="grid='${2}'"
+      shift;shift
+      ;;
+    --class)
+      CLASS="class='${2}'"
+      shift;shift
+      ;;
+    --addr2)
+      ADDR2="addr2='${2}'"
+      shift;shift
+      ;;
+    -v|--verbose)
+      VERBOSE=true
+      shift
+      ;;   
+    -h|--help|-?)
+      HELP=true
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1") # save positional arg
+      shift # past argument
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
+DATABASE='fieldday'
+TABLE='qrzdata'
+
+function usage {
+  cat << HELPSxx
+update fields in the ${TABLE} table in the ${DATABASE}  database
+setdetail  --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h|-?]
+  --call,-c  REQUIRED - the callsign of the record being updated
+  --email,-e email address
+  --phone,-e telephone number
+  --nickname nickname
+  --grid gridsquare
+  --class license class [TGE...]
+  --verbose
+  --help,-h  this help message
+HELPSxx
+  return 0
+  }
+
+if [ "$HELP" == true ] || [ "${CALL}" == "" ]; then
+	echo "callsign missing"
+	usage
+	if [ "${CALL}" == "" ]; then
+	  exit 1
+        else
+	  exit 0
+	fi
+fi
+
+
+SETS=""
+
+for ITEM in  $EMAIL $PHONE $NICKNAME $GRID $CLASS $FIRSTNAME $LASTNAME $COUNTRY $ADDR2
+do
+	if [ "${ITEM}" == "" ]; then continue; fi
+	if [ "${SETS}" == "" ]; then
+		SETS=$ITEM
+	else
+	  SETS="${SETS}, ${ITEM}"
+	fi
+done
+
+echo "SETS=${SETS}"
+
+MARIADB="log4omdb-import"
+
+if [ -n "${SETS}"  ]; then
+	QUERY="INSERT INTO ${DATABASE}.${TABLE} SET fdcall='${CALL}', ${SETS} ON DUPLICATE KEY UPDATE  ${SETS};"
+	if [ "$VERBOSE" = true ]; then
+		echo "QUERY=${QUERY}";
+	fi
+	${MARIADB} <<< "${QUERY}"
+else
+	echo "nothing to set: ${SETS}"
+	usage
+	exit 2
+fi
+
+
+#QUERY="use ${DATABASE}; update ${DATABASE}.${TABLE} ${SETS} where callsign='${CALL}';"
+
+#echo ${QUERY}
+
+

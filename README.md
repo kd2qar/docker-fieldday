@@ -10,7 +10,9 @@ run the script '`checkfielddata`' to compare callsign, class and section data to
 on the log submission site.
 
 run with -u or --update periodically to download fresh data from the log submission site:
-	- `./checkfielddata -u`
+```	
+ `./checkfielddata -u`
+```
 
 The docker image can be created by running `make`.
 The container is created and run by the '`checkfielddata`' script
@@ -82,4 +84,5 @@ DELIMITER ;
 ## Possible Improvements:
 - embed the callbook scripts in this image or publish the `callinfo` stuff. 
 - automate the 'harvesting' of the N3FJP files, possibly copy or link to them at runtime.
+- document stuff I forgot to mention
 - ...
