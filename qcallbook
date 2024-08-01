@@ -3,7 +3,7 @@
 POSITIONAL_ARGS=()
 #QUIET=0
 
-FIELDS=" fdcall, callsign, nickname, firstname, lastname, IF(email IS NULL,qrz_email,email) as email, phone, grid, addr2, state, country, class"
+FIELDS=" fdcall, callsign, if(nickname IS NULL,'',nickname) as nickname, if(firstname IS NULL,'',firstname) as firstname, lastname, IF(email IS NULL,if(qrz_email IS NULL,'',qrz_email),email) as email, if(phone IS NULL,'',phone) AS phone, grid, addr2 as city, if(state IS NULL,'',state) AS state, country, if(class IS NULL,'',class) AS class"
 SEARCHFIELD="fdcall"
 
 while [[ $# -gt 0 ]]; do
@@ -58,8 +58,16 @@ while [[ $# -gt 0 ]]; do
       shift
       SEARCHFIELD="firstname like '$1'  OR  lastname like '$1' OR nickname "
       ;;
+    --state)
+      SEARCHFIELD="state"
+      shift
+      ;;
+    --addr2|--city)
+      SEARCHFIELD="addr2"
+      shift
+      ;;
     --brief)
-      FIELDS=" fdcall, callsign, IF(nickname IS NULL, firstname, nickname) as name, lastname, IF(email IS NULL,qrz_email,email) as email, phone, grid, country, class"
+       FIELDS=" fdcall, callsign, IF(nickname IS NULL, if(firstname IS NULL,'',firstname), nickname) as name, lastname, IF(email IS NULL,qrz_email,email) as email, if(phone IS NULL,'',phone) AS phone, grid, country, if(class IS NULL,'',class) AS class"
       shift
       ;;
     -h|--help|-?)
@@ -92,8 +100,10 @@ qrawny  --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h
   --email,-e email address
   --phone,-e telephone number
   --nickname nickname
+  --name
   --firstname
   --lastname
+  --state
   --grid gridsquare
   --class license class [TGE...]
   --brief show an abbreviated set of fields
@@ -119,4 +129,3 @@ echo "${query}"
 MARIADB="mariadb"
 
 ${MARIADB} --table <<< "${query}"
-

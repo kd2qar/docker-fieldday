@@ -115,27 +115,40 @@ CREATE TABLE IF NOT EXISTS fieldday.tblContacts
 -- FIRST COLUMN CONTAINS THE CALL 'HEARD' FROM THE FIELD DAY
 -- STATION
 
-CREATE TABLE IF NOT EXISTS fieldday.`qrzdata` (
-        `fdcall` VARCHAR(20) NOT NULL         ,
-        `callsign` VARCHAR(20) DEFAULT NULL ,
-        `nickname` TEXT NULL DEFAULT NULL ,
-        `firstname` TEXT NULL DEFAULT NULL ,
-        `lastname` TEXT NULL DEFAULT NULL ,
-        `phone` VARCHAR(20) NULL DEFAULT NULL ,
-        `grid` VARCHAR(6) NULL DEFAULT NULL ,
-        `addr2` TEXT NULL DEFAULT NULL ,
-        `state` VARCHAR(20) NULL DEFAULT NULL,
-        `country` TEXT NULL DEFAULT NULL ,
-        `class` TEXT NULL DEFAULT NULL ,
-        `fullname` TEXT AS (if(`firstname` is null and `lastname` is null and `nickname` is NULL,NULL,
-			       concat(if(`nickname` is null,if(firstname IS NULL,'',concat(`firstname`,' ')),		             
-			       concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`)))) 
-			   VIRTUAL,
-        `location` TEXT AS (if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`))) VIRTUAL,
-        `email` TEXT NULL DEFAULT NULL,
-        `qrz_email` TEXT NULL DEFAULT NULL,
-        PRIMARY KEY (`fdcall`) USING BTREE
-)
+CREATE TABLE `qrzdata` (
+  `fdcall` varchar(20) NOT NULL,
+  `callsign` varchar(20) DEFAULT NULL,
+  `aliases` text DEFAULT NULL,
+  `nickname` text DEFAULT NULL,
+  `firstname` text DEFAULT NULL,
+  `lastname` text DEFAULT NULL,
+  `fullname` text GENERATED ALWAYS AS
+	(if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,
+	concat(if(`nickname` is null,if(`firstname` is null,'',concat(`firstname`,' ')),
+	concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`))))
+	VIRTUAL,
+  `location` text GENERATED ALWAYS AS
+	(if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`)))
+	VIRTUAL,
+  `grid` varchar(6) DEFAULT NULL,
+  `lattitude` text DEFAULT NULL,
+  `longitude` text DEFAULT NULL,
+  `ituzone` int(32) DEFAULT NULL,
+  `cqzone` int(32) DEFAULT NULL,
+  `dxcc` int(32) DEFAULT NULL,
+  `county` text DEFAULT NULL,
+  `continent` text DEFAULT NULL,
+  `addr1` text DEFAULT NULL,
+  `addr2` text DEFAULT NULL,
+  `state` varchar(20) DEFAULT NULL,
+  `postalcode` varchar(80) DEFAULT NULL,
+  `country` text DEFAULT NULL,
+  `class` text DEFAULT NULL,
+  `qrz_email` text DEFAULT NULL,
+  `email` text DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`fdcall`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 COMMENT='Details from QRZ and other sources for each callsign'
 ;
 
