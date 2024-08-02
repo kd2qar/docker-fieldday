@@ -15,8 +15,9 @@ while [[ $# -gt 0 ]]; do
 #      shift # past argument
 #      shift # past value
 #      ;;
-    =f|--fdcall)
-      CALL="${2}";shift;shift
+    -f|--fdcall)
+      CALL="${2}"
+      shift;shift
       ;;
     -c|--callsign|--call)
       CALLSIGN="${2}"
@@ -79,6 +80,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [ "$VERBOSE" = true ]; then
+  echo "CALL     =${CALL}"
+  echo "CALLSIGN =${CALLSIGN}"
+  echo "SETS     =${SETS}"
+fi
+
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 DATABASE='fieldday'
@@ -87,8 +94,9 @@ TABLE='qrzdata'
 function usage {
   cat << HELPSxx
 update fields in the ${TABLE} table in the ${DATABASE}  database
-setdetail  --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h|-?]
-  --call,-c  REQUIRED - the callsign of the record being updated
+setdetail  --fdcall|-f <CALLSIGN> --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h|-?]
+  --fdcall,-f REQUIRED - the callsign of the record being updated
+  --call,-c  the callsign returned from the query (may be different if fdcall is a new vanity call) usually they are the same
   --email,-e email address
   --phone,-e telephone number
   --nickname nickname
