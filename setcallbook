@@ -10,11 +10,6 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       #shift # past value
       ;;
-#    -s|--searchpath)
-#      SEARCHPATH="$2"
-#      shift # past argument
-#      shift # past value
-#      ;;
     -f|--fdcall)
       CALL="${2}"
       shift;shift
@@ -53,12 +48,12 @@ while [[ $# -gt 0 ]]; do
       GRID="grid='${2}'"
       shift;shift
       ;;
-    --class)
-      CLASS="class='${2}'"
+    --license|--licclass|--class)
+      CLASS="licclass='${2}'"
       shift;shift
       ;;
-    --addr2)
-      ADDR2="addr2='${2}'"
+    --city|--addr2)
+      ADDR2="city='${2}'"
       shift;shift
       ;;
     -v|--verbose)
@@ -101,7 +96,8 @@ setdetail  --fdcall|-f <CALLSIGN> --call|-c <CALLSIGN>  [-e|--email <email>,-p|-
   --phone,-e telephone number
   --nickname nickname
   --grid gridsquare
-  --class license class [TGE...]
+  --city city
+  --license license class [TGE...]
   --verbose
   --help,-h  this help message
 HELPSxx

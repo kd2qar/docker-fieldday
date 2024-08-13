@@ -3,8 +3,18 @@
 POSITIONAL_ARGS=()
 #QUIET=0
 
-FIELDS=" fdcall, callsign, if(nickname IS NULL,'',nickname) as nickname, if(firstname IS NULL,'',firstname) as firstname, lastname, IF(email IS NULL,if(qrz_email IS NULL,'',qrz_email),email) as email, if(phone IS NULL,'',phone) AS phone, grid, city, if(state IS NULL,'',state) AS state, country, if(licclass IS NULL,'',licclass) AS license"
-SEARCHFIELD="fdcall"
+# fieldday_status | CREATE TABLE `fieldday_status` (
+#  `callsign` varchar(50) NOT NULL,
+#  `gota` varchar(50) DEFAULT NULL,
+#  `status` varchar(80) DEFAULT NULL,
+#  `club` varchar(80) DEFAULT NULL,
+#  `class` varchar(10) DEFAULT NULL,
+#  `section` varchar(10) DEFAULT NULL
+#)
+
+SEARCHFIELD="callsign"
+FIELDS=" callsign, gota, status, club, class, section"
+TABLE="fieldday.fieldday_status"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -37,8 +47,8 @@ while [[ $# -gt 0 ]]; do
       SEARCHFIELD="grid"
       shift
       ;;
-    -l|--licclass|--license|--class)
-      SEARCHFIELD="licclass"
+    --class)
+      SEARCHFIELD="class"
       shift
       ;;
     --lastname)
@@ -62,7 +72,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --brief)
-      FIELDS=" fdcall, callsign, IF(nickname IS NULL, if(firstname IS NULL,'',firstname), nickname) as name, lastname, IF(email IS NULL,qrz_email,email) as email, if(phone IS NULL,'',phone) AS phone, grid, country, if(licclass IS NULL,'',licclass) AS license"
+       FIELDS=" fdcall, callsign, IF(nickname IS NULL, if(firstname IS NULL,'',firstname), nickname) as name, lastname, IF(email IS NULL,qrz_email,email) as email, if(phone IS NULL,'',phone) AS phone, grid, country, if(class IS NULL,'',class) AS class"
       shift
       ;;
     -h|--help|-?)
@@ -82,8 +92,8 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-DATABASE='fieldday'
-TABLE='qrzdata'
+TABLE="fieldday_status"
+DATABASE="fieldday"
 
 function usage {
   cat << HELPS
@@ -98,10 +108,9 @@ qrawny  --call|-c <CALLSIGN>  [-e|--email <email>,-p|--phone <phone> , --help|-h
   --name
   --firstname
   --lastname
-  --city
   --state
   --grid gridsquare
-  --license license class [TGE...]
+  --class license class [TGE...]
   --brief show an abbreviated set of fields
   --help,-h  this help message
 HELPS
