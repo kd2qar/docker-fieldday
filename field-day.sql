@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS fieldday.tblContacts
 -- FIRST COLUMN CONTAINS THE CALL 'HEARD' FROM THE FIELD DAY
 -- STATION
 
-CREATE TABLE `qrzdata` (
+CREATE TABLE IF NOT EXISTS `qrzdata` (
   `fdcall` varchar(20) NOT NULL,
   `callsign` varchar(20) DEFAULT NULL,
   `aliases` text DEFAULT NULL,
@@ -123,14 +123,6 @@ CREATE TABLE `qrzdata` (
   `nickname` text DEFAULT NULL,
   `firstname` text DEFAULT NULL,
   `lastname` text DEFAULT NULL,
-  `fullname` text GENERATED ALWAYS AS
-	(if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,
-	concat(if(`nickname` is null,if(`firstname` is null,'',concat(`firstname`,' ')),
-	concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`))))
-	VIRTUAL,
-  `location` text GENERATED ALWAYS AS
-	(if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`)))
-	VIRTUAL,
   `grid` varchar(6) DEFAULT NULL,
   `lattitude` text DEFAULT NULL,
   `longitude` text DEFAULT NULL,
@@ -148,6 +140,14 @@ CREATE TABLE `qrzdata` (
   `qrz_email` text DEFAULT NULL,
   `email` text DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
+  `fullname` text GENERATED ALWAYS AS
+	(if(`firstname` is null and `lastname` is null and `nickname` is null,NULL,
+	concat(if(`nickname` is null,if(`firstname` is null,'',concat(`firstname`,' ')),
+	concat(`nickname`,' ')),'',if(`lastname` is null,'',`lastname`))))
+	VIRTUAL,
+  `location` text GENERATED ALWAYS AS
+	(if(`country` is null,'',if(`country` = 'United States' or `country` = 'USA',concat(`state`,', USA'),`country`)))
+	VIRTUAL,
   PRIMARY KEY (`fdcall`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 COMMENT='Details from QRZ and other sources for each callsign'
